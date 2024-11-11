@@ -58,5 +58,18 @@ def select_target_and_apply_transformations(df):
             st.success("One-Hot Encoding applied.")
             st.write("Updated DataFrame:")
             st.dataframe(df)
+
+        # Target Encoding (Media de la columna objetivo `y` para cada categoría)
+        if target_column:
+            st.write("### Target Encoding")
+            target_encode_cols = st.multiselect("Select columns for Target Encoding:", categorical_columns)
+            if target_encode_cols and st.button("Apply Target Encoding"):
+                for col in target_encode_cols:
+                    # Calcula la media de la variable objetivo para cada categoría de la columna seleccionada
+                    encoding_map = df.groupby(col)[target_column].mean()
+                    df[col] = df[col].map(encoding_map)
+                st.success("Target Encoding applied.")
+                st.write("Updated DataFrame:")
+                st.dataframe(df)
     
     return df

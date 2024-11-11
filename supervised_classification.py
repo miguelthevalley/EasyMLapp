@@ -1,13 +1,13 @@
-# supervised_classification.py
-
 import streamlit as st
-from xgboost import XGBClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, precision_score, recall_score
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import RobustScaler, StandardScaler, MinMaxScaler
 import pandas as pd
 import time
+from xgboost import XGBClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import RobustScaler, StandardScaler, MinMaxScaler
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 
 def train_and_evaluate(model, X, y, hyperparameters={}, scaler_type="RobustScaler", test_size=0.2, random_state=42, stratify_option=True):
     model_name = model.__class__.__name__
@@ -43,12 +43,6 @@ def train_and_evaluate(model, X, y, hyperparameters={}, scaler_type="RobustScale
     train_recall = recall_score(y_train, y_train_pred, average='weighted')
     test_recall = recall_score(y_test, y_test_pred, average='weighted')
 
-    st.write(f"### Model: {model_name}")
-    st.write(f"Execution Time: {execution_time:.2f} seconds")
-    st.write(f"Train Accuracy: {train_accuracy:.4f}, Test Accuracy: {test_accuracy:.4f}")
-    st.write(f"Train Precision: {train_precision:.4f}, Test Precision: {test_precision:.4f}")
-    st.write(f"Train Recall: {train_recall:.4f}, Test Recall: {test_recall:.4f}")
-
     result = pd.DataFrame({
         'Model': [model_name],
         'Train Accuracy': [train_accuracy],
@@ -65,21 +59,45 @@ def train_and_evaluate(model, X, y, hyperparameters={}, scaler_type="RobustScale
 def run_classification_models(X, y):
     st.write("## Step 1: Configure Classification Model and Hyperparameters")
 
-    # Seleccionar características (X)
+    # Seleccionar modelo de clasificación
+    model_type = st.selectbox("Select Classification Model:", ["XGBClassifier", "RandomForestClassifier", "LogisticRegression"])
+
+    # Selección de características (X)
     feature_columns = st.multiselect("Select Feature Columns (X):", options=X.columns.tolist(), default=X.columns.tolist())
     X = X[feature_columns]
 
+    # Seleccionar escalador
     scaler_type = st.selectbox("Select Scaler:", ["StandardScaler", "MinMaxScaler", "RobustScaler"])
     stratify_option = st.checkbox("Stratify Split", value=True)
 
-    # Configuración de hiperparámetros para XGBClassifier
-    model = XGBClassifier()
-    st.write("### XGBClassifier Hyperparameters")
-    learning_rate = st.number_input("Learning Rate", min_value=0.01, max_value=1.0, value=0.1)
-    n_estimators = st.slider("Number of Estimators", min_value=50, max_value=300, value=100)
-    max_depth = st.slider("Max Depth", min_value=1, max_value=10, value=3)
-    hyperparameters = {'learning_rate': learning_rate, 'n_estimators': n_estimators, 'max_depth': max_depth}
+    # Configuración de hiperparámetros basados en el modelo seleccionado
+    if model_type == "XGBClassifier":
+        model = XGBClassifier()
+        st.write("### XGBClassifier Hyperparameters")
+        learning_rate = st.number_input("Learning Rate", min_value=0.01, max_value=1.0, value=0.1)
+        n_estimators = st.slider("Number of Estimators", min_value=50, max_value=300, value=100)
+        max_depth = st.slider("Max Depth", min_value=1, max_value=10, value=3)
+        hyperparameters = {'learning_rate': learning_rate, 'n_estimators': n_estimators, 'max_depth': max_depth}
 
+    elif model_type == "RandomForestClassifier":
+        model = RandomForestClassifier()
+        st.write("### RandomForestClassifier Hyperparameters")
+        n_estimators = st.slider("Number of Estimators", min_value=50, max_value=300, value=100)
+        max_depth = st.slider("Max Depth", min_value=1, max_value=20, value=10)
+        hyperparameters = {'n_estimators': n_estimators, 'max_depth': max_depth}
+
+    elif model_type == "LogisticRegression":
+        model = LogisticRegression()
+        st.write("### LogisticRegression Hyperparameters")
+        C = st.number_input("Inverse of Regularization Strength (C)", min_value=0.01, max_value=10.0, value=1.0)
+        max_iter = st.slider("Maximum Iterations", min_value=50, max_value=500, value=100)
+        hyperparameters = {'C': C, 'max_iter': max_iter}
+
+    # Inicializar historial de simulaciones
+    if "simulation_history" not in st.session_state:
+        st.session_state.simulation_history = pd.DataFrame()
+
+    # Entrenar y evaluar el modelo seleccionado con los hiperparámetros configurados
     if st.button("Train and Evaluate Model"):
         pipeline, results = train_and_evaluate(
             model, X, y, hyperparameters=hyperparameters, scaler_type=scaler_type, stratify_option=stratify_option
@@ -87,3 +105,11 @@ def run_classification_models(X, y):
         if results is not None:
             st.write("### Evaluation Results")
             st.dataframe(results)
+
+            # Guardar el resultado en el historial de simulaciones
+            st.session_state.simulation_history = pd.concat([st.session_state.simulation_history, results], ignore_index=True)
+
+    # Mostrar historial de simulaciones
+    if not st.session_state.simulation_history.empty:
+        st.write("## Simulation History")
+        st.dataframe(st.session_state.simulation_history)
