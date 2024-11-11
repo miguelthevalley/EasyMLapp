@@ -1,3 +1,5 @@
+# main2.py
+
 import streamlit as st
 from supervised_classification import run_classification_models
 from supervised_regression import run_regression_models
@@ -10,38 +12,39 @@ def run_ml_pipeline(df):
         return
 
     st.write("## Machine Learning Model Selection")
-    st.dataframe(df)  # Mostrar el DataFrame actual
+    st.dataframe(df)
 
-    # Selección del tipo de problema (supervisado o no supervisado)
     problem_type = st.selectbox("Select Problem Type:", ["Supervised Learning", "Unsupervised Learning"])
 
-    target_column = None  # Default value for target column
-
     if problem_type == "Supervised Learning":
-        # Selección de la variable objetivo (Y)
         target_column = st.selectbox("Select target (Y) variable:", options=df.columns)
 
+
+        # Si se selecciona una columna de destino
+        
         # Si se selecciona una columna de destino
         if target_column:
-            # Separar las características (X) y la variable objetivo (y)
-            X = df.drop(columns=[target_column])
-            y = df[target_column]
+            # Selección de variables de características
+            feature_columns = st.multiselect("Select feature (X) variables:", options=[col for col in df.columns if col != target_column])
 
-            # Elegir entre clasificación o regresión
-            supervised_type = st.selectbox("Is it a regression or classification problem?", ["Regression", "Classification"])
+            # Si el usuario ha seleccionado al menos una variable de características
+            if feature_columns:
+                X = df[feature_columns]
+                y = df[target_column]
 
-            # Ejecutar modelos de regresión
-            if supervised_type == "Regression":
-                run_regression_models(X, y)
+                supervised_type = st.selectbox("Is it a regression or classification problem?", ["Regression", "Classification"])
 
-            # Ejecutar modelos de clasificación
-            elif supervised_type == "Classification":
-                run_classification_models(X, y)  # Pasa tanto X como y a la función
-        else:
-            st.warning("Please select a target variable to proceed.")
+                if supervised_type == "Regression":
+                    run_regression_models(X, y)
 
-    # Flujo para modelos no supervisados
+                elif supervised_type == "Classification":
+                    run_classification_models(X, y)
+
     elif problem_type == "Unsupervised Learning":
-        run_clustering_models(df)
-    else:
-        st.warning("Please select a valid problem type.")
+        feature_columns = st.multiselect("Select features (X) variables for clustering:", options=df.columns)
+
+        if feature_columns:
+            X = df[feature_columns]
+            run_clustering_models(X)
+        else:
+            st.warning("Please select at least one feature for clustering.")

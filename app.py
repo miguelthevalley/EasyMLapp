@@ -42,8 +42,6 @@ if st.session_state.selected_step == "Upload Data":
             st.success("File uploaded successfully!")
             st.write("### Data Preview")
             st.dataframe(df)
-            # Cambiar automáticamente a Data Preprocessing al cargar el archivo
-            st.session_state.selected_step = "Data Preprocessing"
         except Exception as e:
             st.error(f"Error loading file: {e}")
 
