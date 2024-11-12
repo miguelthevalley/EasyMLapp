@@ -3,7 +3,7 @@
 import streamlit as st
 from supervised_classification import run_classification_models
 from supervised_regression import run_regression_models
-from unsupervised_clustering import run_clustering_models
+from unsupervised_clustering import run_unsupervised_models
 
 def run_ml_pipeline(df):
     # Verificar que el DataFrame esté disponible
@@ -45,6 +45,6 @@ def run_ml_pipeline(df):
 
         if feature_columns:
             X = df[feature_columns]
-            run_clustering_models(X)
+            run_unsupervised_models(X)
         else:
             st.warning("Please select at least one feature for clustering.")
