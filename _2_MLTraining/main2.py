@@ -14,6 +14,9 @@ def run_ml_pipeline(df):
     st.write("## Machine Learning Model Selection")
     st.dataframe(df)
 
+    # Inicializamos el diccionario para almacenar modelos entrenados
+    trained_models = {}
+
     # Selección del tipo de problema con una clave única
     problem_type = st.selectbox("Select Problem Type:", ["Supervised Learning", "Unsupervised Learning"], key="ml_problem_type_select")
 
@@ -34,9 +37,11 @@ def run_ml_pipeline(df):
                 supervised_type = st.selectbox("Is it a regression or classification problem?", ["Regression", "Classification"], key="ml_supervised_type_select")
 
                 if supervised_type == "Regression":
-                    st.session_state.trained_models = run_regression_models(X, y)  # Guardar modelos de regresión entrenados
+                    # st.session_state.trained_models = run_regression_models(X, y)  # Guardar modelos de regresión entrenados
+                    trained_models = run_regression_models(X, y)
                 elif supervised_type == "Classification":
-                    st.session_state.trained_models = run_classification_models(X, y)  # Guardar modelos de clasificación entrenados
+                    # st.session_state.trained_models = run_classification_models(X, y)  # Guardar modelos de clasificación entrenados
+                    trained_models = run_classification_models(X, y)
             else:
                 st.warning("Please select at least one feature variable for supervised learning.")
         else:
@@ -51,3 +56,5 @@ def run_ml_pipeline(df):
             st.session_state.trained_models = run_unsupervised_models(X)  # Guardar modelos de clustering entrenados
         else:
             st.warning("Please select at least one feature for clustering.")
+    
+        return trained_models

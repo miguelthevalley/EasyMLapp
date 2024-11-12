@@ -62,7 +62,7 @@ if st.session_state.selected_step == "Data Preprocessing":
 if st.session_state.selected_step == "ML Training":
     st.write("### Step 2: ML training")
     if st.session_state.df_transformed is not None:
-        st.session_state.trained_models = run_ml_pipeline(st.session_state.df_transformed)  # Guarda los modelos entrenados
+        st.session_state.trained_models = run_ml_pipeline(st.session_state.df_transformed)
     else:
         st.warning("Please complete the Data Preprocessing step first.")
 

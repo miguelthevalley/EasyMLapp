@@ -2,14 +2,16 @@ import streamlit as st
 import pandas as pd
 
 def select_and_predict():
-    # Asegúrate de que hay modelos entrenados
+    # Verificar que `trained_models` esté en `st.session_state` y no esté vacío
     if "trained_models" in st.session_state and st.session_state.trained_models:
-        # Selección del modelo a guardar
-        model_name = st.selectbox("Select a model to save:", list(st.session_state.trained_models.keys()))
+        # Seleccionar el modelo para realizar predicciones
+        model_name = st.selectbox("Select a model for prediction:", list(st.session_state.trained_models.keys()))
+        
+        # Guardar el modelo seleccionado en `st.session_state.saved_model`
         st.session_state.saved_model = st.session_state.trained_models[model_name]
-        st.success(f"Model '{model_name}' saved successfully for predictions!")
+        st.success(f"Model '{model_name}' is selected and ready for predictions!")
 
-        # Entrada de nuevas variables
+        # Entrada de nuevas variables para predicción
         st.write("### Enter new data for prediction")
         new_data_method = st.radio("Choose how to input new data:", ["Manual Input", "Upload CSV"])
 
@@ -19,9 +21,9 @@ def select_and_predict():
             for feature in st.session_state.df_transformed.columns:
                 input_value = st.number_input(f"Enter value for {feature}", format="%.4f")
                 input_data[feature] = input_value
-            new_data = pd.DataFrame([input_data])
+            new_data = pd.DataFrame([input_data])  # Crear un DataFrame de una fila con los datos ingresados manualmente
 
-        # Subir datos desde CSV
+        # Subir datos desde un archivo CSV
         elif new_data_method == "Upload CSV":
             new_data_file = st.file_uploader("Upload a CSV file with new data for prediction", type=["csv"])
             if new_data_file is not None:
@@ -33,12 +35,15 @@ def select_and_predict():
                     st.error(f"Error loading new data file: {e}")
                     new_data = None
 
-        # Realizar predicciones
+        # Realizar predicciones si el modelo está guardado y hay datos disponibles
         if st.button("Predict") and st.session_state.saved_model is not None:
             if new_data is not None:
-                predictions = st.session_state.saved_model.predict(new_data)
-                st.write("### Predictions")
-                st.write(predictions)
+                try:
+                    predictions = st.session_state.saved_model.predict(new_data)
+                    st.write("### Predictions")
+                    st.write(predictions)
+                except Exception as e:
+                    st.error(f"Error making predictions: {e}")
             else:
                 st.warning("Please input new data for prediction.")
     else:
