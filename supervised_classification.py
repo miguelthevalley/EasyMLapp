@@ -26,7 +26,7 @@ def train_and_evaluate(model, X, y, hyperparameters={}, scaler_type="RobustScale
     for param, value in hyperparameters.items():
         setattr(model, param, value)
 
-    scaler = {"StandardScaler": StandardScaler(), "MinMaxScaler": MinMaxScaler(), "RobustScaler": RobustScaler()}.get(scaler_type, RobustScaler())
+    scaler = {"StandardScaler": StandardScaler(), "MinMaxScaler": MinMaxScaler(), "RobustScaler": RobustScaler()}.get(scaler_type, None)
     pipeline = Pipeline(steps=[('scaler', scaler), ('classifier', model)])
 
     start_time = time.time()
@@ -62,12 +62,8 @@ def run_classification_models(X, y):
     # Seleccionar modelo de clasificación
     model_type = st.selectbox("Select Classification Model:", ["XGBClassifier", "RandomForestClassifier", "LogisticRegression"])
 
-    # Selección de características (X)
-    feature_columns = st.multiselect("Select Feature Columns (X):", options=X.columns.tolist(), default=X.columns.tolist())
-    X = X[feature_columns]
-
     # Seleccionar escalador
-    scaler_type = st.selectbox("Select Scaler:", ["StandardScaler", "MinMaxScaler", "RobustScaler"])
+    scaler_type = st.selectbox("Select Scaler:", ["StandardScaler", "MinMaxScaler", "RobustScaler", "None"])
     stratify_option = st.checkbox("Stratify Split", value=True)
 
     # Configuración de hiperparámetros basados en el modelo seleccionado

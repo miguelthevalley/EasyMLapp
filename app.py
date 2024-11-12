@@ -4,10 +4,10 @@ from main1 import run_preprocessing_pipeline
 from main2 import run_ml_pipeline
 
 
-st.set_page_config(page_title="Data Pipeline and ML App", layout="wide")  # Debe estar en la primera línea
+st.set_page_config(page_title="EasyMLApp", layout="wide")  # Debe estar en la primera línea
 
 # Título de la aplicación
-st.title("🔄 Data Transformation and Machine Learning Pipeline")
+st.title("EasyMLApp")
 
 # Inicializar `st.session_state` para el DataFrame y el paso seleccionado
 if "df" not in st.session_state:
