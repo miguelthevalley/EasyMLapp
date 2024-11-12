@@ -4,6 +4,10 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 
 def select_target_and_apply_transformations(df):
+    if df is None:
+        st.warning("Please preprocess the data first.")
+        return None
+
     # Selección de la columna objetivo (opcional)
     st.write("### Select Target Column")
     target_column = st.selectbox("Select the target (y) variable (optional):", [None] + list(df.columns))
@@ -71,5 +75,7 @@ def select_target_and_apply_transformations(df):
                 st.success("Target Encoding applied.")
                 st.write("Updated DataFrame:")
                 st.dataframe(df)
+    else:
+        st.warning('Please preprocess the data first')
     
     return df

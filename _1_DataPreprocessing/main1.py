@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
-from eda import initial_eda, final_eda
-from imputation import impute_missing_values
-from transformations import select_target_and_apply_transformations
+from _1_DataPreprocessing.eda import initial_eda, final_eda
+from _1_DataPreprocessing.imputation import impute_missing_values
+from _1_DataPreprocessing.transformations import select_target_and_apply_transformations
 
 def load_data():
     uploaded_file = st.file_uploader("Upload your CSV or Excel file", type=["csv", "xlsx"])

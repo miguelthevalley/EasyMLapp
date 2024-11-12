@@ -1,21 +1,19 @@
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import streamlit as st
 import pandas as pd
 import time
-import streamlit as st
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-def train_and_evaluate(model, X, y, hyperparameters={}, scaler_type="RobustScaler", test_size=0.2, random_state=42, stratify_option=False):
+def train_and_evaluate(model, X, y, hyperparameters={}, scaler_type="RobustScaler", test_size=0.2, random_state=42, cv=0):
     model_name = model.__class__.__name__
 
-    # Dividir el conjunto de datos sin estratificación (para regresión)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=random_state
-    )
+    # Dividir el conjunto de datos en train-test
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
 
     # Asignar hiperparámetros al modelo
     for param, value in hyperparameters.items():
@@ -24,46 +22,66 @@ def train_and_evaluate(model, X, y, hyperparameters={}, scaler_type="RobustScale
     # Selección del escalador
     scaler = {"StandardScaler": StandardScaler(), "MinMaxScaler": MinMaxScaler(), "RobustScaler": RobustScaler()}.get(scaler_type, None)
 
-    # Crear pipeline sin escalador si `scaler_type` es `None`
+    # Crear pipeline con o sin escalador
     if scaler:
         pipeline = Pipeline(steps=[('scaler', scaler), ('regressor', model)])
     else:
         pipeline = Pipeline(steps=[('regressor', model)])
 
-    # Entrenar el modelo
-    start_time = time.time()
-    pipeline.fit(X_train, y_train)
-    execution_time = time.time() - start_time
+    if cv > 0:
+        # Validación cruzada en el conjunto de entrenamiento
+        start_time = time.time()
+        cv_scores = cross_val_score(pipeline, X_train, y_train, cv=cv, scoring='neg_mean_squared_error')
+        execution_time = time.time() - start_time
 
-    # Predicciones y evaluación
-    y_train_pred = pipeline.predict(X_train)
-    y_test_pred = pipeline.predict(X_test)
+        # Entrenar en todo el conjunto de entrenamiento y evaluar en el conjunto de prueba
+        pipeline.fit(X_train, y_train)
+        y_test_pred = pipeline.predict(X_test)
 
-    train_mse = mean_squared_error(y_train, y_train_pred)
-    test_mse = mean_squared_error(y_test, y_test_pred)
-    train_mae = mean_absolute_error(y_train, y_train_pred)
-    test_mae = mean_absolute_error(y_test, y_test_pred)
-    train_r2 = r2_score(y_train, y_train_pred)
-    test_r2 = r2_score(y_test, y_test_pred)
+        test_mse = mean_squared_error(y_test, y_test_pred)
+        test_mae = mean_absolute_error(y_test, y_test_pred)
+        test_r2 = r2_score(y_test, y_test_pred)
 
-    # Crear DataFrame de resultados
-    result = pd.DataFrame({
-        'Model': [model_name],
-        'Train MSE': [train_mse],
-        'Test MSE': [test_mse],
-        'Train MAE': [train_mae],
-        'Test MAE': [test_mae],
-        'Train R2': [train_r2],
-        'Test R2': [test_r2],
-        'Execution Time': [execution_time]
-    })
+        result = pd.DataFrame({
+            'Model': [model_name],
+            'Scaler': [scaler_type],
+            'Hyperparameters': [", ".join(f"{k}={v}" for k, v in hyperparameters.items())],
+            'CV MSE Mean': [-cv_scores.mean()],  # Convierte a positivo
+            'CV MSE Std': [cv_scores.std()],
+            'Test MSE': [test_mse],
+            'Test MAE': [test_mae],
+            'Test R2': [test_r2],
+            'Execution Time': [execution_time]
+        })
+
+    else:
+        # Entrenar y evaluar sin validación cruzada
+        start_time = time.time()
+        pipeline.fit(X_train, y_train)
+        execution_time = time.time() - start_time
+
+        y_train_pred = pipeline.predict(X_train)
+        y_test_pred = pipeline.predict(X_test)
+
+        train_mse = mean_squared_error(y_train, y_train_pred)
+        test_mse = mean_squared_error(y_test, y_test_pred)
+        train_mae = mean_absolute_error(y_train, y_train_pred)
+        test_mae = mean_absolute_error(y_test, y_test_pred)
+        train_r2 = r2_score(y_train, y_train_pred)
+        test_r2 = r2_score(y_test, y_test_pred)
+
+        result = pd.DataFrame({
+            'Model': [model_name],
+            'Train MSE': [train_mse],
+            'Test MSE': [test_mse],
+            'Train MAE': [train_mae],
+            'Test MAE': [test_mae],
+            'Train R2': [train_r2],
+            'Test R2': [test_r2],
+            'Execution Time': [execution_time]
+        })
 
     return pipeline, result
-
-import streamlit as st
-from sklearn.linear_model import LinearRegression, Ridge, Lasso
-from sklearn.ensemble import RandomForestRegressor
-from xgboost import XGBRegressor
 
 def run_regression_models(X, y):
     st.write("## Step 1: Configure Regression Model and Hyperparameters")
@@ -74,13 +92,15 @@ def run_regression_models(X, y):
     # Seleccionar escalador
     scaler_type = st.selectbox("Select Scaler:", ["StandardScaler", "MinMaxScaler", "RobustScaler", "None"])
 
+    # Seleccionar cross-validation
+    cv = st.slider("Select Cross-Validation (CV) folds:", min_value=0, max_value=10, step=2)
+
     # Configuración de hiperparámetros basados en el modelo seleccionado
     if model_type == "LinearRegression":
         model = LinearRegression()
         st.write("### Linear Regression Hyperparameters")
         fit_intercept = st.checkbox("Fit Intercept", value=True)
         hyperparameters = {'fit_intercept': fit_intercept}
-
 
     elif model_type == "RandomForestRegressor":
         model = RandomForestRegressor()
@@ -104,7 +124,7 @@ def run_regression_models(X, y):
     # Entrenar y evaluar el modelo seleccionado con los hiperparámetros configurados
     if st.button("Train and Evaluate Model"):
         pipeline, results = train_and_evaluate(
-            model, X, y, hyperparameters=hyperparameters, scaler_type=scaler_type
+            model, X, y, hyperparameters=hyperparameters, scaler_type=scaler_type, cv=cv
         )
         if results is not None:
             st.write("### Evaluation Results")

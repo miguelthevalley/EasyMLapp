@@ -43,6 +43,7 @@ def final_eda(df):
         sns.heatmap(df.corr(), annot=True, cmap='coolwarm', ax=ax)
         st.pyplot(fig)
 
-    if st.checkbox('Show Pairplot'):
+    if st.checkbox('Show Final Pairplot'):
         st.write('### Pairplot')
-        st.pyplot(fig)
+        pairplot_fig_fin = sns.pairplot(df, diag_kind='kde')
+        st.pyplot(pairplot_fig_fin)
