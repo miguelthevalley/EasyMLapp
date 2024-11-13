@@ -127,9 +127,11 @@ def run_classification_models(X, y):
         max_iter = st.slider("Maximum Iterations", min_value=50, max_value=500, value=100)
         hyperparameters = {'C': C, 'max_iter': max_iter}
 
-    # Inicializar historial de simulaciones
+    # Inicializar historial de simulaciones y diccionario de modelos
     if "simulation_history" not in st.session_state:
         st.session_state.simulation_history = pd.DataFrame()
+    if "trained_models" not in st.session_state:
+        st.session_state.trained_models = {}  # Inicializar trained_models si no existe
 
     # Entrenar y evaluar el modelo seleccionado con los hiperparámetros configurados
     if st.button("Train and Evaluate Model"):
@@ -139,6 +141,12 @@ def run_classification_models(X, y):
         if results is not None:
             st.write("### Evaluation Results")
             st.dataframe(results)
+
+            # Guardar el modelo entrenado en `st.session_state.trained_models`
+            st.session_state.trained_models[model_type] = {
+                "model": pipeline,          # El pipeline del modelo entrenado
+                "features": list(X.columns) # Las características utilizadas para entrenar
+}
 
             # Guardar el resultado en el historial de simulaciones
             st.session_state.simulation_history = pd.concat([st.session_state.simulation_history, results], ignore_index=True)

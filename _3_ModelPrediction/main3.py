@@ -7,8 +7,17 @@ def select_and_predict():
         # Seleccionar el modelo para realizar predicciones
         model_name = st.selectbox("Select a model for prediction:", list(st.session_state.trained_models.keys()))
         
-        # Guardar el modelo seleccionado en `st.session_state.saved_model`
-        st.session_state.saved_model = st.session_state.trained_models[model_name]
+        # Obtener modelo y su información asociada
+        selected_model_info = st.session_state.trained_models[model_name]
+        selected_model = selected_model_info["model"]
+        selected_features = selected_model_info["features"]
+        evaluation_metrics = selected_model_info["evaluation"]
+
+        # Mostrar detalles del modelo seleccionado
+        st.write(f"### Details for Model: {model_name}")
+        st.write("#### Evaluation Metrics:")
+        st.table(pd.DataFrame([evaluation_metrics]))
+
         st.success(f"Model '{model_name}' is selected and ready for predictions!")
 
         # Entrada de nuevas variables para predicción
@@ -18,7 +27,7 @@ def select_and_predict():
         # Entrada de datos manual
         if new_data_method == "Manual Input":
             input_data = {}
-            for feature in st.session_state.df_transformed.columns:
+            for feature in selected_features:
                 input_value = st.number_input(f"Enter value for {feature}", format="%.4f")
                 input_data[feature] = input_value
             new_data = pd.DataFrame([input_data])  # Crear un DataFrame de una fila con los datos ingresados manualmente
@@ -29,17 +38,24 @@ def select_and_predict():
             if new_data_file is not None:
                 try:
                     new_data = pd.read_csv(new_data_file)
-                    st.write("### New Data Preview")
-                    st.dataframe(new_data)
+
+                    # Validar que las columnas coincidan con las características del modelo
+                    if set(selected_features).issubset(new_data.columns):
+                        new_data = new_data[selected_features]
+                        st.write("### New Data Preview")
+                        st.dataframe(new_data)
+                    else:
+                        st.error(f"The uploaded CSV does not contain all required features: {selected_features}")
+                        new_data = None
                 except Exception as e:
                     st.error(f"Error loading new data file: {e}")
                     new_data = None
 
         # Realizar predicciones si el modelo está guardado y hay datos disponibles
-        if st.button("Predict") and st.session_state.saved_model is not None:
+        if st.button("Predict") and selected_model is not None:
             if new_data is not None:
                 try:
-                    predictions = st.session_state.saved_model.predict(new_data)
+                    predictions = selected_model.predict(new_data)
                     st.write("### Predictions")
                     st.write(predictions)
                 except Exception as e:

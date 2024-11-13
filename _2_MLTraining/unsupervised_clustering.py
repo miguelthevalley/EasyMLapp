@@ -44,10 +44,14 @@ def train_and_evaluate_unsupervised(model, X, scaler_type="StandardScaler"):
     else:
         labels = model.fit_predict(X)
 
-    return labels, X
+    return labels, X, scaler
 
 def run_unsupervised_models(X):
     st.write("## Step 1: Configure Unsupervised Model and Hyperparameters")
+
+    # Inicializar almacenamiento para modelos si no existe
+    if "trained_models" not in st.session_state:
+        st.session_state.trained_models = {}
 
     # Seleccionar modelo no supervisado
     model_type = st.selectbox("Select Unsupervised Model:", ["KMeans", "DBSCAN"])
@@ -84,7 +88,14 @@ def run_unsupervised_models(X):
 
     # Entrenar y evaluar el modelo no supervisado
     if st.button("Train and Visualize Model"):
-        labels, X_transformed = train_and_evaluate_unsupervised(model, X, scaler_type=scaler_type)
+        labels, X_transformed, scaler = train_and_evaluate_unsupervised(model, X, scaler_type=scaler_type)
+
+        # Guardar modelo entrenado
+        st.session_state.trained_models[model_type] = {
+            "model": model,
+            "scaler": scaler,
+            "features": list(X.columns) if isinstance(X, pd.DataFrame) else None
+        }
 
         # Reducción de dimensionalidad para visualización (PCA a 2 o 3 componentes)
         n_components = 3 if visualization_type == "3D" else 2

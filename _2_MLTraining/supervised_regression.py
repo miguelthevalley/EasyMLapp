@@ -120,6 +120,8 @@ def run_regression_models(X, y):
     # Inicializar historial de simulaciones
     if "simulation_history" not in st.session_state:
         st.session_state.simulation_history = pd.DataFrame()
+    if "trained_models" not in st.session_state:
+        st.session_state.trained_models = {}  # Inicializar trained_models si no existe
 
     # Entrenar y evaluar el modelo seleccionado con los hiperparámetros configurados
     if st.button("Train and Evaluate Model"):
@@ -129,6 +131,12 @@ def run_regression_models(X, y):
         if results is not None:
             st.write("### Evaluation Results")
             st.dataframe(results)
+
+            # Guardar el modelo entrenado en `st.session_state.trained_models`
+            st.session_state.trained_models[model_type] = {
+                "model": pipeline,          # El pipeline del modelo entrenado
+                "features": list(X.columns) # Las características utilizadas para entrenar
+}
 
             # Guardar el resultado en el historial de simulaciones
             st.session_state.simulation_history = pd.concat([st.session_state.simulation_history, results], ignore_index=True)

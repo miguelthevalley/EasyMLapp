@@ -4,13 +4,12 @@ from _1_DataPreprocessing.main1 import run_preprocessing_pipeline
 from _2_MLTraining.main2 import run_ml_pipeline
 from _3_ModelPrediction.main3 import select_and_predict 
 
-
 st.set_page_config(page_title="EasyMLApp", layout="wide")  # Debe estar en la primera línea
 
 # Título de la aplicación
 st.title("EasyMLApp")
 
-# Inicializar `st.session_state` para el DataFrame y el paso seleccionado
+# Inicializar `st.session_state` para variables clave
 if "df" not in st.session_state:
     st.session_state.df = None  # DataFrame original cargado
 if "df_transformed" not in st.session_state:
@@ -62,7 +61,10 @@ if st.session_state.selected_step == "Data Preprocessing":
 if st.session_state.selected_step == "ML Training":
     st.write("### Step 2: ML training")
     if st.session_state.df_transformed is not None:
-        st.session_state.trained_models = run_ml_pipeline(st.session_state.df_transformed)
+        trained_models = run_ml_pipeline(st.session_state.df_transformed)
+        # Combinar los nuevos modelos entrenados con los existentes
+        if trained_models:
+            st.session_state.trained_models.update(trained_models)
     else:
         st.warning("Please complete the Data Preprocessing step first.")
 
