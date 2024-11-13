@@ -11,13 +11,13 @@ def calculate_elbow_method(X, scaler):
         X = scaler.fit_transform(X)
 
     sse = []
-    K_range = range(1, 11)
+    K_range = range(1, 100)
     for k in K_range:
         kmeans = KMeans(n_clusters=k, init="k-means++", max_iter=300, random_state=42)
         kmeans.fit(X)
         sse.append(kmeans.inertia_)
 
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(4, 4))
     plt.plot(K_range, sse, marker='o')
     plt.xlabel("Number of Clusters (K)")
     plt.ylabel("Sum of Squared Distances")
@@ -52,7 +52,7 @@ def run_unsupervised_models(X):
                                               "MinMaxScaler": MinMaxScaler(), 
                                               "RobustScaler": RobustScaler()}.get(scaler_type, None))
         model.set_params(
-            n_clusters=st.slider("Number of Clusters", min_value=2, max_value=10, value=3),
+            n_clusters=st.slider("Number of Clusters", min_value=2, max_value=100, value=3),
             init=st.selectbox("Initialization Method", ["k-means++", "random"]),
             max_iter=st.slider("Max Iterations", min_value=100, max_value=1000, value=300)
         )
