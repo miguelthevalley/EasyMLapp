@@ -143,10 +143,12 @@ def run_classification_models(X, y):
             st.dataframe(results)
 
             # Guardar el modelo entrenado en `st.session_state.trained_models`
-            st.session_state.trained_models[model_type] = {
-                "model": pipeline,          # El pipeline del modelo entrenado
-                "features": list(X.columns) # Las características utilizadas para entrenar
-}
+            model_key = f"{model_type}_{len([key for key in st.session_state.trained_models.keys() if model_type in key])}"
+            st.session_state.trained_models[model_key] = {
+                "model": pipeline,
+                "features": list(X.columns),
+                "evaluation": results.to_dict(orient="records")  # Guardar las métricas de evaluación
+            }
 
             # Guardar el resultado en el historial de simulaciones
             st.session_state.simulation_history = pd.concat([st.session_state.simulation_history, results], ignore_index=True)
